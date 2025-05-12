@@ -1,3 +1,7 @@
+import { useEffect, useState } from 'react';
+import { useParams } from "react-router-dom";
+import { getSolutionAnalysis, SubmissionResponse } from "@/services/api/SolvingAnalysis";
+
 import SolutionAnalysisHeader from '@/components/solutionAnalysis/SolutionAnalysisHeader';
 import Analysis from '@/components/solutionAnalysis/Analysis';
 import UserSolution from '@/components/solutionAnalysis/UserSolution';
@@ -5,6 +9,21 @@ import TimeAnalysis from '@/components/solutionAnalysis/TimeAnalysis';
 import GraphAnalysis from '@/components/solutionAnalysis/GraphAnalysis';
 
 const SolutionAnalysisPage = () => {
+  const { submissionId } = useParams<{ submissionId: string }>();
+  const [data, setData] = useState<SubmissionResponse | null>(null);
+
+  useEffect(() => {
+    if (submissionId) {
+      getSolutionAnalysis(+submissionId)
+        .then(setData)
+        .catch(console.error);
+    }
+  }, [submissionId]);
+
+  if (!data) {
+    return <div>로딩 중...</div>;
+  }
+  
   return (
     <div>
         <SolutionAnalysisHeader />
@@ -14,15 +33,26 @@ const SolutionAnalysisPage = () => {
             background: 'linear-gradient(to bottom, #EBF2FE 37%, #FFFFFF 100%)',
           }}
         >
-            <UserSolution />
-            <Analysis />
+            <UserSolution 
+              fullStepImageUrl={data?.full_step_image_url || ""}
+              steps={data?.steps || []}
+            />
+            <Analysis
+              aiAnalysis={data?.ai_analysis || ""}
+              weakness={data?.weakness || ""}
+              explanation={{
+                explanation_answer: data?.explanation.explanation_answer || "",
+                explanation_description: data?.explanation.explanation_description || "",
+                explanation_image_url: data?.explanation.explanation_image_url || "",
+              }}
+            />
         </div>
         <div className='grid grid-cols-12 gap-x-4'>
           <div className="col-span-6 p-10">
-            <TimeAnalysis />
+            <TimeAnalysis times={data?.time!} />
           </div>
           <div className="col-span-6 p-10">
-            <GraphAnalysis />
+            <GraphAnalysis steps={data.steps} />
           </div>
         </div>
     </div>
